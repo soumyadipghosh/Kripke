@@ -209,7 +209,7 @@ void ParallelComm::waitAllSends(void){
 }
 
 /**
-  Checks for incomming messages, and does relevant bookkeeping.
+  Checks for incoming messages, and does relevant bookkeeping.
 */
 void ParallelComm::testRecieves(void){
 #ifdef KRIPKE_USE_MPI
