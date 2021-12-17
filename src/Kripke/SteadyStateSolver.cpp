@@ -16,6 +16,9 @@
 #include <vector>
 #include <stdio.h>
 
+#include <fstream>
+#include <string>
+
 using namespace Kripke::Core;
 
 /**
@@ -38,6 +41,10 @@ int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_i
   // Intialize unknowns
   Kripke::Kernel::kConst(data_store.getVariable<Kripke::Field_Flux>("psi"), 0.0);
 
+  // Create file to write bdy values 
+  std::ofstream bdy;
+  std::string name = "bdy" + std::to_string(comm.rank()) + ".dat";
+  bdy.open(name);
 
   // Loop over iterations
   double part_last = 0.0;
@@ -103,9 +110,30 @@ int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_i
     }
     part_last = part;
 
+    // Get planes to write to file
+    auto &old_i_plane = data_store.getVariable<Field_IPlane>("i_plane");
+    auto &old_j_plane = data_store.getVariable<Field_JPlane>("j_plane");
+    auto &old_k_plane = data_store.getVariable<Field_KPlane>("k_plane");
 
+    // Iterate through subdomains
+    // queue_sdom_ids
+    int num_subdomains = pspace.getNumSubdomains(SPACE_PQR);
+    std::cout << num_subdomains << std::endl;
+    for(size_t i = 0; i < num_subdomains; ++i){
+      SdomId sdom_id(i);
+   
+      // Write to file
+      bdy << *old_i_plane.getData(sdom_id) << ", ";
+      bdy << *old_j_plane.getData(sdom_id) << ", ";
+      bdy << *old_k_plane.getData(sdom_id) << ", ";
+    }
+
+    bdy << std::endl;
 
   }
+
+  // Close file
+  bdy.close();
 
   if(comm.rank() == 0){
     printf("  Solver terminated\n");
@@ -113,7 +141,3 @@ int Kripke::SteadyStateSolver (Kripke::Core::DataStore &data_store, size_t max_i
 
   return(0);
 }
-
-
-
-
